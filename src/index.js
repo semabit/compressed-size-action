@@ -8,9 +8,9 @@ import { fileExists, diffTable, toBool, stripHash } from './utils.js';
 /**
  * @typedef {ReturnType<typeof import("@actions/github").getOctokit>} Octokit
  * @typedef {typeof import("@actions/github").context} ActionContext
- * @param {Octokit} octokit 
- * @param {ActionContext} context 
- * @param {string} token 
+ * @param {Octokit} octokit
+ * @param {ActionContext} context
+ * @param {string} token
  */
 async function run(octokit, context, token) {
 	const { owner, repo, number: pull_number } = context.issue;
@@ -51,12 +51,18 @@ async function run(octokit, context, token) {
 	const cwd = process.cwd();
 
 	let yarnLock = await fileExists(path.resolve(cwd, 'yarn.lock'));
+	let isYarn2 = yarnLock ? await patternExistsInFile(/__metadata:/, path.resolve(cwd, 'yarn.lock')) : false;
 	let packageLock = await fileExists(path.resolve(cwd, 'package-lock.json'));
 
 	let npm = `npm`;
 	let installScript = `npm install`;
-	if (yarnLock) {
-		installScript = npm = `yarn --frozen-lockfile`;
+	if (isYarn2) {
+		npm = `yarn`;
+		installScript = `yarn install --immutable`;
+	}
+	else if (yarnLock) {
+		npm = `yarn`;
+		installScript = `yarn --frozen-lockfile`;
 	}
 	else if (packageLock) {
 		installScript = `npm ci`;
@@ -71,7 +77,7 @@ async function run(octokit, context, token) {
 	console.log(`Building using ${npm} run ${buildScript}`);
 	await exec(`${npm} run ${buildScript}`);
 	endGroup();
-	
+
 	// In case the build step alters a JSON-file, ....
 	await exec(`git reset --hard`);
 
@@ -118,7 +124,7 @@ async function run(octokit, context, token) {
 
 	yarnLock = await fileExists(path.resolve(cwd, 'yarn.lock'));
 	packageLock = await fileExists(path.resolve(cwd, 'package-lock.json'));
-	
+
 	if (yarnLock) {
 		installScript = npm = `yarn --frozen-lockfile`;
 	}
@@ -256,8 +262,8 @@ async function run(octokit, context, token) {
 
 /**
  * Create a check and return a function that updates (completes) it
- * @param {Octokit} octokit 
- * @param {ActionContext} context 
+ * @param {Octokit} octokit
+ * @param {ActionContext} context
  */
 async function createCheck(octokit, context) {
 	const check = await octokit.checks.create({
