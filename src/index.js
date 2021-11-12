@@ -123,10 +123,16 @@ async function run(octokit, context, token) {
 	startGroup(`[base] Install Dependencies`);
 
 	yarnLock = await fileExists(path.resolve(cwd, 'yarn.lock'));
+	isYarn2 = yarnLock ? await patternExistsInFile(/__metadata:/, path.resolve(cwd, 'yarn.lock')) : false;
 	packageLock = await fileExists(path.resolve(cwd, 'package-lock.json'));
 
-	if (yarnLock) {
-		installScript = npm = `yarn --frozen-lockfile`;
+	if (isYarn2) {
+		npm = `yarn`;
+		installScript = `yarn install --immutable`;
+	}
+	else if (yarnLock) {
+		npm = `yarn`;
+		installScript = `yarn --frozen-lockfile`;
 	}
 	else if (packageLock) {
 		installScript = `npm ci`;
