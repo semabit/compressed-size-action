@@ -3,7 +3,7 @@ import { getInput, setFailed, startGroup, endGroup, debug } from '@actions/core'
 import { context, getOctokit } from '@actions/github';
 import { exec } from '@actions/exec';
 import SizePlugin from 'size-plugin-core';
-import { fileExists, diffTable, toBool, stripHash } from './utils.js';
+import { fileExists, diffTable, toBool, stripHash, patternExistsInFile } from './utils.js';
 
 /**
  * @typedef {ReturnType<typeof import("@actions/github").getOctokit>} Octokit
